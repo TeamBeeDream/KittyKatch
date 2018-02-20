@@ -21,7 +21,6 @@ struct Position {
 
 class DefaultPositioner {
     private let tolerance: CGFloat
-    //private let smoothing: CGFloat
     private let timeToMove: CGFloat
     private let frame: CGRect
     
@@ -32,7 +31,6 @@ class DefaultPositioner {
     init(frame: CGRect, timeToMove: CGFloat, tolerance: CGFloat) {
         self.frame = frame
         self.tolerance = tolerance
-        //self.smoothing = 1.0 / timeToMove // @TODO: Check this for correctnes
         self.timeToMove = timeToMove
     }
     
@@ -58,10 +56,6 @@ class DefaultPositioner {
             self.targetPosition = 0.0
         }
     }
-    
-    //func update(dt: Double) {
-    //    self.update(dt: CGFloat(dt)) // @FIXME: not sure if necessary
-    //}
     
     func update(dt: Double) {
         let delta = CGFloat(dt)

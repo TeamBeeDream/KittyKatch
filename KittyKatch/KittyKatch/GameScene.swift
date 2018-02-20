@@ -90,7 +90,7 @@ class GameScene: SKScene {
     }
     
     private func setup() {
-        self.positioner = DefaultPositioner(frame: self.frame, timeToMove: 0.07, tolerance: 0.1)
+        self.positioner = DefaultPositioner(frame: self.frame, timeToMove: 0.07, tolerance: 0.4)
     }
     
     func random() -> CGFloat {
@@ -154,18 +154,6 @@ class GameScene: SKScene {
         }
     }
     
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.positioner?.touchPress(point: t.location(in: self)) }
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for _ in touches { self.positioner?.touchRelease() }
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for _ in touches { self.positioner?.touchRelease() }
-    }
-    
     override func update(_ currentTime: TimeInterval) {
         // calculate timestep
         var delta = currentTime - self.previousTime
@@ -193,5 +181,19 @@ class GameScene: SKScene {
     
     func updateUI() {
         self.label.text = String(format: "%d", self.collected)
+    }
+}
+
+extension GameScene {
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for t in touches { self.positioner?.touchPress(point: t.location(in: self)) }
+    }
+    
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for _ in touches { self.positioner?.touchRelease() }
+    }
+    
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for _ in touches { self.positioner?.touchRelease() }
     }
 }
