@@ -39,6 +39,10 @@ class GameScene: SKScene {
     // TIMING
     private var previousTime: TimeInterval = 0
     
+    private var sequencer: PatternSequencer!
+    private var pattern: Pattern!
+    private var rowIndex: Int = 0
+    
     override func didMove(to view: SKView) {
         self.setup()
         
@@ -83,7 +87,9 @@ class GameScene: SKScene {
                     if self.pickupCount <= 0 {
                         self.removeAction(forKey: key)
                     } else {
-                        self.addPickup()
+                        // temp
+                        self.spawnRow(row: self.pattern.rows[self.rowIndex])
+                        self.rowIndex = (self.rowIndex + 1) % self.pattern.rows.count
                     }
                 })])),
             withKey: key)
@@ -91,6 +97,10 @@ class GameScene: SKScene {
     
     private func setup() {
         self.positioner = DefaultPositioner(frame: self.frame, timeToMove: 0.07, tolerance: 0.4)
+        self.sequencer = PatternSequencer()
+        self.sequencer.load()
+        self.pattern = self.sequencer.getPattern()
+        self.rowIndex = 0
     }
     
     func random() -> CGFloat {
@@ -101,38 +111,53 @@ class GameScene: SKScene {
         return random() * (max - min) + min
     }
     
-    func addPickup() {
-        let isPickup = random() > 0.3
-        let randPos = round(random(min: -1.0, max: +1.0))
-        let x = frame.midX + randPos * offset
-        
-        let startPos = CGPoint(x: x, y: frame.maxY)
-        
-        let p = (isPickup ? self.pickup.copy() : self.badObj.copy()) as! SKShapeNode
-        p.position = startPos
-        
-        // movement
-        let timeStep = CGFloat(0.1)
-        let totalDistance = frame.maxY
-        let totalTime = CGFloat(2.0)
-        let vecStep = totalDistance / (totalTime / timeStep)
-        
-        let moveVector = CGVector(dx: 0, dy: -vecStep)
-        
-        // actions
-        p.run(SKAction.repeatForever(
-            SKAction.sequence([
-                SKAction.move(by: moveVector, duration: TimeInterval(timeStep)),
-                SKAction.run { self.checkCollision(pickup: p, good: isPickup) }])))
-        
-        addChild(p)
-        
-        if isPickup {
-            self.pickupCount -= 1
+    private func spawnRow(row: Row) {
+        for (_, pickup) in row.pickups.enumerated() {
+            let type = pickup.pickup // @FIXME: gross
+            if type == .none { continue }
+            
+            let node = getNode(fromType: type)
+            node.position.y = frame.maxY
+            node.position.x = self.laneToPosition(lane: pickup.lane)
+            
+            let timeStep = CGFloat(0.1)
+            let totalDistance = frame.maxY
+            let totalTime = CGFloat(2.0)
+            let vecStep = totalDistance / (totalTime / timeStep)
+            
+            let moveVector = CGVector(dx: 0, dy: -vecStep)
+            
+            // actions
+            node.run(SKAction.repeatForever(
+                SKAction.sequence([
+                    SKAction.move(by: moveVector, duration: TimeInterval(timeStep)),
+                    SKAction.run { self.checkCollision(pickup: node, good: type == .good) }])))
+            
+            addChild(node)
+            
+            if type == .good {
+                self.pickupCount -= 1
+            }
         }
     }
     
-    func checkCollision(pickup: SKShapeNode, good: Bool) {
+    private func getNode(fromType: Pickup) -> SKNode {
+        switch fromType {
+        case .none:
+            assert(false) // @FIXME
+        case .good:
+            return self.pickup.copy() as! SKNode   // @HARDCODED
+        case .bad:
+            return self.badObj.copy() as! SKNode   // @HARDCODED
+        }
+    }
+    
+    private func laneToPosition(lane: Lane) -> CGFloat {
+        let laneIntValue = CGFloat(lane.rawValue)
+        return frame.midX + (offset * laneIntValue)
+    }
+    
+    func checkCollision(pickup: SKNode, good: Bool) {
         let diffX = fabs(self.kitty.position.x - pickup.position.x)
         let diffY = fabs(self.kitty.position.y - pickup.position.y)
         let tolerance : CGFloat = 35.0
@@ -172,7 +197,7 @@ class GameScene: SKScene {
         switch position.state {
         case .inPosition(let positionOffset):
             positionMarker.alpha = 1.0
-            positionMarker.position.x = frame.midX + (offset * positionOffset)
+            positionMarker.position.x = frame.midX + (offset * CGFloat(positionOffset.rawValue))
             positionMarker.position.y = self.kitty.position.y
         case .outOfPosition:
             positionMarker.alpha = 0.0

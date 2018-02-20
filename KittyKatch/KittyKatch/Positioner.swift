@@ -9,8 +9,16 @@
 import Foundation
 import UIKit
 
+enum Lane: Int {
+    case left   = -1
+    case center =  0
+    case right  =  1
+    
+    static let count = 3
+}
+
 enum PositionState {
-    case inPosition(CGFloat)
+    case inPosition(Lane)
     case outOfPosition
 }
 
@@ -76,15 +84,16 @@ class DefaultPositioner {
     }
     
     private func getState() -> PositionState {
-        let left: CGFloat = -1.0
-        let center: CGFloat = 0.0
-        let right: CGFloat = +1.0
-        if fabs(self.currentPosition - left) < self.tolerance {
-            return .inPosition(left)
-        } else if fabs(self.currentPosition - center) < self.tolerance {
-            return .inPosition(center)
-        } else if fabs(self.currentPosition - right) < self.tolerance {
-            return .inPosition(right)
+        let left: Int = -1
+        let center: Int = 0
+        let right: Int = +1
+        
+        if fabs(self.currentPosition - CGFloat(left)) < self.tolerance {
+            return .inPosition(.left)
+        } else if fabs(self.currentPosition - CGFloat(center)) < self.tolerance {
+            return .inPosition(.center)
+        } else if fabs(self.currentPosition - CGFloat(right)) < self.tolerance {
+            return .inPosition(.right)
         }
         
         return .outOfPosition

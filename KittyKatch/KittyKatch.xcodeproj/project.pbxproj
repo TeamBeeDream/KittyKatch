@@ -16,6 +16,7 @@
 		D67D53C8203B840100084515 /* Positioner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53C7203B840100084515 /* Positioner.swift */; };
 		D67D53D8203B8D7F00084515 /* PositionerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53D7203B8D7F00084515 /* PositionerTests.swift */; };
 		D67D53DA203B907600084515 /* PatternSequencer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53D9203B907600084515 /* PatternSequencer.swift */; };
+		D68FD012203CAF26005D4ED5 /* AllPatterns.txt in Resources */ = {isa = PBXBuildFile; fileRef = D68FD011203CAF26005D4ED5 /* AllPatterns.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -42,6 +43,7 @@
 		D67D53D1203B8D5700084515 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		D67D53D7203B8D7F00084515 /* PositionerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionerTests.swift; sourceTree = "<group>"; };
 		D67D53D9203B907600084515 /* PatternSequencer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternSequencer.swift; sourceTree = "<group>"; };
+		D68FD011203CAF26005D4ED5 /* AllPatterns.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = AllPatterns.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +85,7 @@
 		D67D53AC203B4DD500084515 /* KittyKatch */ = {
 			isa = PBXGroup;
 			children = (
+				D68FD010203CAEC2005D4ED5 /* Patterns */,
 				D67D53AD203B4DD500084515 /* AppDelegate.swift */,
 				D67D53B5203B4DD500084515 /* GameViewController.swift */,
 				D67D53B3203B4DD500084515 /* GameScene.swift */,
@@ -103,6 +106,14 @@
 				D67D53D1203B8D5700084515 /* Info.plist */,
 			);
 			path = KittyKatchUnitTests;
+			sourceTree = "<group>";
+		};
+		D68FD010203CAEC2005D4ED5 /* Patterns */ = {
+			isa = PBXGroup;
+			children = (
+				D68FD011203CAF26005D4ED5 /* AllPatterns.txt */,
+			);
+			path = Patterns;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -188,6 +199,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D68FD012203CAF26005D4ED5 /* AllPatterns.txt in Resources */,
 				D67D53B9203B4DD500084515 /* Main.storyboard in Resources */,
 				D67D53BB203B4DD500084515 /* Assets.xcassets in Resources */,
 				D67D53BE203B4DD500084515 /* LaunchScreen.storyboard in Resources */,
