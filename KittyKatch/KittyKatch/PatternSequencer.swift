@@ -20,6 +20,7 @@ enum Result {
 }
 
 enum Difficulty: Int {
+    case starter    = 0
     case easy       = 1
     case medium     = 2
     case hard       = 3
@@ -45,11 +46,23 @@ struct Row {
 struct Pattern {
     var rows: [Row]
     var difficulty: Difficulty
+    var pickupCount: Int
 }
 
 class PatternSequencer {
     
-    private var patterns = [Pattern]()
+    private var patterns: [Difficulty: [Pattern]]!
+    private var maxPickupsPerPattern: Int = 0
+    
+    init() {
+        self.patterns = [Difficulty: [Pattern]]()
+        self.patterns[.starter] = [Pattern]()
+        self.patterns[.easy] = [Pattern]()
+        self.patterns[.medium] = [Pattern]()
+        self.patterns[.hard] = [Pattern]()
+        self.patterns[.veryHard] = [Pattern]()
+        // @FIXME, find better way to do this
+    }
     
     func load() {
         // load patterns from file
@@ -60,7 +73,14 @@ class PatternSequencer {
                 let data = try String(contentsOfFile: path, encoding: .utf8)
                 
                 let lines = data.components(separatedBy: .newlines)
-                self.patterns = self.parsePatternsFile(lines: lines)
+                let patterns = self.parsePatternsFile(lines: lines)
+                for pattern in patterns {
+                    self.patterns[pattern.difficulty]?.append(pattern)
+                    if self.maxPickupsPerPattern < pattern.pickupCount {
+                        self.maxPickupsPerPattern = pattern.pickupCount
+                    }
+                }
+                
             } catch {
                 print(error)
                 assert(false)
@@ -70,14 +90,65 @@ class PatternSequencer {
         }
     }
     
-    func getPattern() -> Pattern {
-        return self.patterns[0] // @TODO, actually return patterns
+    func getSequence(difficulty: Difficulty, pickupCount: Int) -> [Row] {
+        var remainingPickups = pickupCount
+        var sequence = [Row]()
+        
+        while remainingPickups > 0 {
+            let pickupCount = self.randInt(min: 1, max: self.maxPickupsPerPattern)
+            let pattern = self.findPattern(difficulty: difficulty, maxPickupCount: pickupCount)
+            remainingPickups -= pattern.pickupCount
+            sequence.append(contentsOf: pattern.rows)
+        }
+        
+        return sequence
+    }
+    
+    // @TODO: move, fix
+    func randInt(min: Int, max: Int) -> Int {
+        let range = max - min
+        let randValue = Int(arc4random_uniform(UInt32(range)))
+        return Int(randValue + min)
+    }
+    
+    private func findPattern(difficulty: Difficulty, maxPickupCount: Int) -> Pattern {
+        var currentDifficulty = difficulty.rawValue
+        var lookingForCount = maxPickupCount
+        var looking = true
+        while looking {
+            let patternSet = self.patterns[Difficulty(rawValue: currentDifficulty)!]
+            for pattern in patternSet! {
+                if pattern.pickupCount == lookingForCount {
+                    //print("looking for D", difficulty, " C", maxPickupCount)
+                    //print("found D", Difficulty(rawValue: currentDifficulty)!, " C", lookingForCount)
+                    return pattern
+                }
+            }
+            
+            // reduce number looking for
+            if lookingForCount > 0 {
+                lookingForCount -= 1
+                //print("reducing look count")
+            } else {
+                lookingForCount = maxPickupCount
+                currentDifficulty -= 1 // bug
+                //print("reducing difficulty")
+            }
+            
+            // exit loop
+            if currentDifficulty == -1 {
+                looking = false // ERROR
+            }
+        }
+        
+        assert(false) // failed to find pattern
     }
     
     private func parsePatternsFile(lines: [String]) -> [Pattern] {
         var result = [Pattern]()
         
         var buffer = [Row]()
+        var bufferPickupCount = 0
         for line in lines.reversed() {
             let (parseResult, parseValue) = self.parseLine(line)
             if parseResult == .failure { assert(false) }
@@ -87,16 +158,19 @@ class PatternSequencer {
             case .invalid: assert(false)
             case let .row(row):
                 buffer.append(row)
+                bufferPickupCount += self.countPickups(row: row, type: .good)
             case let .header(difficulty):
-                let pattern = Pattern(rows: buffer, difficulty: difficulty)
+                let pattern = Pattern(rows: buffer, difficulty: difficulty, pickupCount: bufferPickupCount)
                 result.append(pattern)
                 buffer.removeAll()
+                bufferPickupCount = 0
             }
         }
         
         return result
     }
     
+    // @TODO: give option to reverse
     private func parseLine(_ line: String) -> (Result, LineType) {
         let characters = Array(line)
         
@@ -139,5 +213,13 @@ class PatternSequencer {
         assert(index >= 0 && index < Lane.count)
         
         return Lane(rawValue: index - 1)! // @TODO: relocate
+    }
+    
+    private func countPickups(row: Row, type: Pickup) -> Int {
+        var count = 0
+        for p in row.pickups {
+            if p.pickup == type { count += 1}
+        }
+        return count
     }
 }

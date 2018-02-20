@@ -40,7 +40,7 @@ class GameScene: SKScene {
     private var previousTime: TimeInterval = 0
     
     private var sequencer: PatternSequencer!
-    private var pattern: Pattern!
+    private var rows: [Row]!
     private var rowIndex: Int = 0
     
     override func didMove(to view: SKView) {
@@ -88,8 +88,8 @@ class GameScene: SKScene {
                         self.removeAction(forKey: key)
                     } else {
                         // temp
-                        self.spawnRow(row: self.pattern.rows[self.rowIndex])
-                        self.rowIndex = (self.rowIndex + 1) % self.pattern.rows.count
+                        self.spawnRow(row: self.rows[self.rowIndex])
+                        self.rowIndex = (self.rowIndex + 1) % self.rows.count
                     }
                 })])),
             withKey: key)
@@ -99,7 +99,7 @@ class GameScene: SKScene {
         self.positioner = DefaultPositioner(frame: self.frame, timeToMove: 0.07, tolerance: 0.4)
         self.sequencer = PatternSequencer()
         self.sequencer.load()
-        self.pattern = self.sequencer.getPattern()
+        self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
         self.rowIndex = 0
     }
     
