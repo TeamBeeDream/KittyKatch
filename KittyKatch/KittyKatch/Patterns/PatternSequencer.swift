@@ -8,15 +8,6 @@
 
 import Foundation
 
-struct Pickup {
-    let type: PickupType
-    let lane: Lane
-}
-
-struct Row {
-    var pickups: [Pickup]
-}
-
 protocol PatternSequencer {
     func getSequence(difficulty: Difficulty, pickupCount: Int) -> [Row]
 }
@@ -42,24 +33,8 @@ class DefaultPatternSequencer {
     }
 }
 
-// MARK: - Protocol Completion
-extension DefaultPatternSequencer: PatternSequencer {
-    private struct Pattern {
-        var rows: [Row]
-        var difficulty: Difficulty
-        var pickupCount: Int
-    }
-    
-    private enum LineType {
-        case header(Difficulty)
-        case row(Row)
-        case blank
-        case invalid
-    }
-}
-
 // MARK: - Public Functions
-extension DefaultPatternSequencer {
+extension DefaultPatternSequencer: PatternSequencer {
     func getSequence(difficulty: Difficulty, pickupCount: Int) -> [Row] {
         var remainingPickups = pickupCount
         var sequence = [Row]()

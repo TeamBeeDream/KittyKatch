@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D61BBC97203DBF510022C85F /* PositionerData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61BBC96203DBF510022C85F /* PositionerData.swift */; };
+		D61BBC99203DBF900022C85F /* PatternData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D61BBC98203DBF900022C85F /* PatternData.swift */; };
 		D67D53AE203B4DD500084515 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53AD203B4DD500084515 /* AppDelegate.swift */; };
 		D67D53B4203B4DD500084515 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53B3203B4DD500084515 /* GameScene.swift */; };
 		D67D53B6203B4DD500084515 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53B5203B4DD500084515 /* GameViewController.swift */; };
@@ -32,6 +34,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D61BBC96203DBF510022C85F /* PositionerData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionerData.swift; sourceTree = "<group>"; };
+		D61BBC98203DBF900022C85F /* PatternData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternData.swift; sourceTree = "<group>"; };
 		D67D53AA203B4DD500084515 /* KittyKatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KittyKatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D67D53AD203B4DD500084515 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D67D53B3203B4DD500084515 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
@@ -68,6 +72,23 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		D61BBC95203DBF2F0022C85F /* Positioner */ = {
+			isa = PBXGroup;
+			children = (
+				D67D53C7203B840100084515 /* Positioner.swift */,
+				D61BBC96203DBF510022C85F /* PositionerData.swift */,
+			);
+			path = Positioner;
+			sourceTree = "<group>";
+		};
+		D61BBC9A203DC0560022C85F /* Scenes */ = {
+			isa = PBXGroup;
+			children = (
+				D67D53B3203B4DD500084515 /* GameScene.swift */,
+			);
+			path = Scenes;
+			sourceTree = "<group>";
+		};
 		D67D53A1203B4DD500084515 = {
 			isa = PBXGroup;
 			children = (
@@ -89,12 +110,11 @@
 		D67D53AC203B4DD500084515 /* KittyKatch */ = {
 			isa = PBXGroup;
 			children = (
+				D61BBC9A203DC0560022C85F /* Scenes */,
+				D61BBC95203DBF2F0022C85F /* Positioner */,
 				D68FD010203CAEC2005D4ED5 /* Patterns */,
 				D67D53AD203B4DD500084515 /* AppDelegate.swift */,
 				D67D53B5203B4DD500084515 /* GameViewController.swift */,
-				D67D53B3203B4DD500084515 /* GameScene.swift */,
-				D67D53C7203B840100084515 /* Positioner.swift */,
-				D67D53D9203B907600084515 /* PatternSequencer.swift */,
 				D68FD013203CFF38005D4ED5 /* Enums.swift */,
 				D68FD015203D01A0005D4ED5 /* Math.swift */,
 				D67D53B7203B4DD500084515 /* Main.storyboard */,
@@ -118,6 +138,8 @@
 			isa = PBXGroup;
 			children = (
 				D68FD011203CAF26005D4ED5 /* AllPatterns.txt */,
+				D67D53D9203B907600084515 /* PatternSequencer.swift */,
+				D61BBC98203DBF900022C85F /* PatternData.swift */,
 			);
 			path = Patterns;
 			sourceTree = "<group>";
@@ -226,11 +248,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D61BBC99203DBF900022C85F /* PatternData.swift in Sources */,
 				D67D53B4203B4DD500084515 /* GameScene.swift in Sources */,
 				D67D53B6203B4DD500084515 /* GameViewController.swift in Sources */,
 				D67D53AE203B4DD500084515 /* AppDelegate.swift in Sources */,
 				D68FD016203D01A0005D4ED5 /* Math.swift in Sources */,
 				D67D53C8203B840100084515 /* Positioner.swift in Sources */,
+				D61BBC97203DBF510022C85F /* PositionerData.swift in Sources */,
 				D68FD014203CFF38005D4ED5 /* Enums.swift in Sources */,
 				D67D53DA203B907600084515 /* PatternSequencer.swift in Sources */,
 			);

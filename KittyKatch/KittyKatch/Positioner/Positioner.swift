@@ -7,12 +7,7 @@
 //
 
 import Foundation
-import UIKit
-
-struct Position {
-    var state: LaneState
-    var offset: CGFloat
-}
+import SpriteKit
 
 protocol Positioner {
     func addInput(_ input: PositionerInput)

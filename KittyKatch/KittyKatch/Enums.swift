@@ -27,20 +27,4 @@ enum Difficulty: Int {
     case veryHard   = 4
 }
 
-enum Lane: Int {
-    case left   = -1
-    case center =  0
-    case right  =  1
-    
-    static let count = 3
-}
 
-enum LaneState {
-    case inLane(Lane)
-    case outOfPosition
-}
-
-enum PositionerInput: Int {
-    case left   = -1
-    case right  =  1
-}
