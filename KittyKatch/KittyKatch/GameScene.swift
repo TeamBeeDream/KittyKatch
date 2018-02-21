@@ -57,8 +57,6 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
-        self.setup()
-        
         backgroundColor = SKColor.black
         
         let label = SKLabelNode(fontNamed: "Chalkduster")
@@ -92,6 +90,9 @@ class GameScene: SKScene {
         self.debugPositionMarker = debugPositionMarker
         addChild(debugPositionMarker)
         
+        self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
+        self.rowIndex = 0
+        
         let key = "spawnLoop"
         run(SKAction.repeatForever(
             SKAction.sequence([
@@ -108,24 +109,9 @@ class GameScene: SKScene {
             withKey: key)
     }
     
-    private func setup() {
-        //self.sequencer = PatternSequencer()
-        self.sequencer.load()
-        self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
-        self.rowIndex = 0
-    }
-    
-    func random() -> CGFloat {
-        return CGFloat(Float(arc4random()) / 0xFFFFFFFF)
-    }
-    
-    func random(min: CGFloat, max: CGFloat) -> CGFloat {
-        return random() * (max - min) + min
-    }
-    
     private func spawnRow(row: Row) {
-        for (_, pickup) in row.pickups.enumerated() {
-            let type = pickup.pickup // @FIXME: gross
+        for pickup in row.pickups {
+            let type = pickup.type
             if type == .none { continue }
             
             let node = getNode(fromType: type)
@@ -153,7 +139,7 @@ class GameScene: SKScene {
         }
     }
     
-    private func getNode(fromType: Pickup) -> SKNode {
+    private func getNode(fromType: PickupType) -> SKNode {
         switch fromType {
         case .none:
             assert(false) // @FIXME

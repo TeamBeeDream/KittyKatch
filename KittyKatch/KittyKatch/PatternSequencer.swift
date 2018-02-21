@@ -8,94 +8,64 @@
 
 import Foundation
 
-enum Pickup { // @TODO: rename
-    case good
-    case bad
-    case none
-}
-
-enum Result {
-    case success
-    case failure
-}
-
-enum Difficulty: Int {
-    case starter    = 0
-    case easy       = 1
-    case medium     = 2
-    case hard       = 3
-    case veryHard   = 4
-}
-
-enum LineType { // @TODO: better name
-    case header(Difficulty)
-    case row(Row)
-    case blank
-    case invalid
-}
-
-struct PickupData { // @TODO: rename
-    let pickup: Pickup
+struct Pickup {
+    let type: PickupType
     let lane: Lane
 }
 
 struct Row {
-    var pickups: [PickupData]
+    var pickups: [Pickup]
 }
 
-struct Pattern {
-    var rows: [Row]
-    var difficulty: Difficulty
-    var pickupCount: Int
+protocol PatternSequencer {
+    func getSequence(difficulty: Difficulty, pickupCount: Int) -> [Row]
 }
 
-class PatternSequencer {
-    
+class DefaultPatternSequencer {
     private var patterns: [Difficulty: [Pattern]]!
     private var maxPickupsPerPattern: Int = 0
     
-    init() {
+    init(filePath: String) {
+        assert(!filePath.isEmpty)
+        
+        // @NOTE: self.patterns is a dictionary
+        //        where every key needs to be initialized
+        // @FIXME: find better way to do this automatically
         self.patterns = [Difficulty: [Pattern]]()
         self.patterns[.starter] = [Pattern]()
         self.patterns[.easy] = [Pattern]()
         self.patterns[.medium] = [Pattern]()
         self.patterns[.hard] = [Pattern]()
         self.patterns[.veryHard] = [Pattern]()
-        // @FIXME, find better way to do this
+        
+        self.loadData(filePath)
+    }
+}
+
+// MARK: - Protocol Completion
+extension DefaultPatternSequencer: PatternSequencer {
+    private struct Pattern {
+        var rows: [Row]
+        var difficulty: Difficulty
+        var pickupCount: Int
     }
     
-    func load() {
-        // load patterns from file
-        // @TODO: refactor, remove nesting
-        if let path = Bundle.main.path(forResource: "AllPatterns", ofType: "txt") {
-            do {
-                
-                let data = try String(contentsOfFile: path, encoding: .utf8)
-                
-                let lines = data.components(separatedBy: .newlines)
-                let patterns = self.parsePatternsFile(lines: lines)
-                for pattern in patterns {
-                    self.patterns[pattern.difficulty]?.append(pattern)
-                    if self.maxPickupsPerPattern < pattern.pickupCount {
-                        self.maxPickupsPerPattern = pattern.pickupCount
-                    }
-                }
-                
-            } catch {
-                print(error)
-                assert(false)
-            }
-        } else {
-            assert(false) // FILE NOT FOUND
-        }
+    private enum LineType {
+        case header(Difficulty)
+        case row(Row)
+        case blank
+        case invalid
     }
-    
+}
+
+// MARK: - Public Functions
+extension DefaultPatternSequencer {
     func getSequence(difficulty: Difficulty, pickupCount: Int) -> [Row] {
         var remainingPickups = pickupCount
         var sequence = [Row]()
         
         while remainingPickups > 0 {
-            let pickupCount = self.randInt(min: 1, max: self.maxPickupsPerPattern)
+            let pickupCount = Math.randInt(min: 1, max: self.maxPickupsPerPattern)
             let pattern = self.findPattern(difficulty: difficulty, maxPickupCount: pickupCount)
             remainingPickups -= pattern.pickupCount
             sequence.append(contentsOf: pattern.rows)
@@ -103,12 +73,20 @@ class PatternSequencer {
         
         return sequence
     }
-    
-    // @TODO: move, fix
-    func randInt(min: Int, max: Int) -> Int {
-        let range = max - min
-        let randValue = Int(arc4random_uniform(UInt32(range)))
-        return Int(randValue + min)
+}
+
+// MARK: - Loading Data
+extension DefaultPatternSequencer {
+    private func loadData(_ path: String) {
+        let data = try! String(contentsOfFile: path, encoding: .utf8)
+        let lines = data.components(separatedBy: .newlines)
+        let patterns = self.parsePatternsFile(lines: lines)
+        for pattern in patterns {
+            self.patterns[pattern.difficulty]?.append(pattern)
+            if self.maxPickupsPerPattern < pattern.pickupCount {
+                self.maxPickupsPerPattern = pattern.pickupCount
+            }
+        }
     }
     
     private func findPattern(difficulty: Difficulty, maxPickupCount: Int) -> Pattern {
@@ -146,19 +124,21 @@ class PatternSequencer {
     
     private func parsePatternsFile(lines: [String]) -> [Pattern] {
         var result = [Pattern]()
-        
         var buffer = [Row]()
         var bufferPickupCount = 0
+        
         for line in lines.reversed() {
-            let (parseResult, parseValue) = self.parseLine(line)
-            if parseResult == .failure { assert(false) }
-            
-            switch parseValue {
-            case .blank: continue
-            case .invalid: assert(false)
+            switch self.parseLine(line) {
+            case .blank:
+                continue // ignore blank lines
+                
+            case .invalid:
+                assert(false) // fail on invalid lines
+                
             case let .row(row):
                 buffer.append(row)
                 bufferPickupCount += self.countPickups(row: row, type: .good)
+                
             case let .header(difficulty):
                 let pattern = Pattern(rows: buffer, difficulty: difficulty, pickupCount: bufferPickupCount)
                 result.append(pattern)
@@ -170,43 +150,44 @@ class PatternSequencer {
         return result
     }
     
-    // @TODO: give option to reverse
-    private func parseLine(_ line: String) -> (Result, LineType) {
+    // @TODO: give option to flip
+    private func parseLine(_ line: String, flip: Bool = false) -> LineType {
         let characters = Array(line)
         
         // case for blank line
         if characters.isEmpty {
-            return (.success, .blank)
+            return .blank
         }
         
         // case for header
         if characters.count == 2 && characters[0] == "D" {
             let intValue = Int(String(characters[1]))
             let difficulty = Difficulty(rawValue: intValue!)
-            return (.success, .header(difficulty!))
+            return .header(difficulty!)
         }
         
         // case for row
         if characters.count == 3 {
-            var pickups = [PickupData]()
+            var pickups = [Pickup]()
             for (index, char) in characters.enumerated() {
                 switch char {
                 case ".":
-                    pickups.append(PickupData(pickup: .none, lane: self.indexToLane(index)))
+                    pickups.append(Pickup(type: .none, lane: self.indexToLane(index)))
                 case "+":
-                    pickups.append(PickupData(pickup: .good, lane: self.indexToLane(index)))
+                    pickups.append(Pickup(type: .good, lane: self.indexToLane(index)))
                 case "-":
-                    pickups.append(PickupData(pickup: .bad, lane: self.indexToLane(index)))
+                    pickups.append(Pickup(type: .bad, lane: self.indexToLane(index)))
                 default:
-                    return (.failure, .invalid)
+                    return .invalid
                 }
             }
+            if flip { pickups.reverse() }
             let row = Row(pickups: pickups)
-            return (.success, .row(row))
+            return .row(row)
         }
         
         // failure
-        return (.failure, .invalid)
+        assert(false)
     }
     
     private func indexToLane(_ index: Int) -> Lane {
@@ -215,10 +196,10 @@ class PatternSequencer {
         return Lane(rawValue: index - 1)! // @TODO: relocate
     }
     
-    private func countPickups(row: Row, type: Pickup) -> Int {
+    private func countPickups(row: Row, type: PickupType) -> Int {
         var count = 0
         for p in row.pickups {
-            if p.pickup == type { count += 1}
+            if p.type == type { count += 1}
         }
         return count
     }

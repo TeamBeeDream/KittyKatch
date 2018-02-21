@@ -11,13 +11,12 @@ import SpriteKit
 import GameplayKit
 
 class GameViewController: UIViewController {
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // @TODO: connect to config file
         let positioner = DefaultPositioner(timeToMove: 0.075, tolerance: 0.35)
-        let sequencer = PatternSequencer()
+        let sequencer = DefaultPatternSequencer(filePath: Bundle.main.path(forResource: "AllPatterns", ofType: "txt")!)
         
         let scene = GameScene(size: view.bounds.size,
                               positioner: positioner,

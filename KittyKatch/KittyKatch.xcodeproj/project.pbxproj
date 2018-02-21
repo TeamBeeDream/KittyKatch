@@ -17,6 +17,8 @@
 		D67D53D8203B8D7F00084515 /* PositionerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53D7203B8D7F00084515 /* PositionerTests.swift */; };
 		D67D53DA203B907600084515 /* PatternSequencer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67D53D9203B907600084515 /* PatternSequencer.swift */; };
 		D68FD012203CAF26005D4ED5 /* AllPatterns.txt in Resources */ = {isa = PBXBuildFile; fileRef = D68FD011203CAF26005D4ED5 /* AllPatterns.txt */; };
+		D68FD014203CFF38005D4ED5 /* Enums.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68FD013203CFF38005D4ED5 /* Enums.swift */; };
+		D68FD016203D01A0005D4ED5 /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = D68FD015203D01A0005D4ED5 /* Math.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -44,6 +46,8 @@
 		D67D53D7203B8D7F00084515 /* PositionerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PositionerTests.swift; sourceTree = "<group>"; };
 		D67D53D9203B907600084515 /* PatternSequencer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternSequencer.swift; sourceTree = "<group>"; };
 		D68FD011203CAF26005D4ED5 /* AllPatterns.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = AllPatterns.txt; sourceTree = "<group>"; };
+		D68FD013203CFF38005D4ED5 /* Enums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enums.swift; sourceTree = "<group>"; };
+		D68FD015203D01A0005D4ED5 /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +95,8 @@
 				D67D53B3203B4DD500084515 /* GameScene.swift */,
 				D67D53C7203B840100084515 /* Positioner.swift */,
 				D67D53D9203B907600084515 /* PatternSequencer.swift */,
+				D68FD013203CFF38005D4ED5 /* Enums.swift */,
+				D68FD015203D01A0005D4ED5 /* Math.swift */,
 				D67D53B7203B4DD500084515 /* Main.storyboard */,
 				D67D53BA203B4DD500084515 /* Assets.xcassets */,
 				D67D53BC203B4DD500084515 /* LaunchScreen.storyboard */,
@@ -223,7 +229,9 @@
 				D67D53B4203B4DD500084515 /* GameScene.swift in Sources */,
 				D67D53B6203B4DD500084515 /* GameViewController.swift in Sources */,
 				D67D53AE203B4DD500084515 /* AppDelegate.swift in Sources */,
+				D68FD016203D01A0005D4ED5 /* Math.swift in Sources */,
 				D67D53C8203B840100084515 /* Positioner.swift in Sources */,
+				D68FD014203CFF38005D4ED5 /* Enums.swift in Sources */,
 				D67D53DA203B907600084515 /* PatternSequencer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
