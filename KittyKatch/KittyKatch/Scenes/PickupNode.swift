@@ -17,6 +17,9 @@ class PickupNode {
     private let coordinates: Coordinates!
     private let resolver: CollisionResolver!
     
+    public let collectEvent = Event<Pickup>()
+    private var alreadyHit: Bool = false    // @HACK: prevents event from being called twice
+    
     init(data: Pickup, node: SKNode,
          travelTime: CGFloat,
          positioner: Positioner,
@@ -53,7 +56,9 @@ extension PickupNode {
     
     private func getCollisionAction(dt: CGFloat) -> SKAction {
         let collision = SKAction.run {
-            if self.didCollide(lane: self.data.lane, type: self.data.type) {
+            if !self.alreadyHit && self.didCollide(lane: self.data.lane, type: self.data.type) {
+                self.alreadyHit = true
+                self.collectEvent.raise(data: self.data)
                 self.node.removeAllActions()
                 self.node.run(self.getCollectAndDeleteSequence())
             }

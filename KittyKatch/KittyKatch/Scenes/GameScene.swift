@@ -124,7 +124,9 @@ class GameScene: SKScene {
             withKey: key)
     }
     
-    
+    func handleCollect(data: Pickup) {
+        //print("COLLECTED:", data.type, self.count)
+    }
     
     private func spawnRow(row: Row) {
         for pickup in row.pickups {
@@ -132,6 +134,7 @@ class GameScene: SKScene {
             if type == .none { continue }
             
             let node = getNode(fromType: type)
+            //print("spawning:", pickup.lane, pickup.type)
             addChild(node)
             
             let pickupNode = PickupNode(
@@ -141,6 +144,7 @@ class GameScene: SKScene {
                 positioner: self.positioner,
                 coordinates: self.coordinates,
                 resolver: self.resolver)
+            pickupNode.collectEvent.addHandler(target: self, handler: GameScene.handleCollect) // @FIXME: figure out how to handle return value
             pickupNode.activate()
             
             if type == .good {
