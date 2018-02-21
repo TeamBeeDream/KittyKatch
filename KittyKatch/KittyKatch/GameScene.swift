@@ -12,6 +12,10 @@ import Foundation
 
 class GameScene: SKScene {
     
+    // PARAMETERS
+    private let positioner: Positioner!
+    private let sequencer: PatternSequencer!
+    
     // DIFFICULTY SETTINGS
     private let toleranceX = 35.0
     private let toleranceY = 35.0
@@ -28,8 +32,7 @@ class GameScene: SKScene {
     // KITTY
     private var kitty : SKShapeNode!
     
-    // TOUCHES
-    private var positioner: DefaultPositioner!
+    // DEBUG
     private var debugPositionMarker: SKShapeNode!
     
     // PICKUPS
@@ -39,9 +42,19 @@ class GameScene: SKScene {
     // TIMING
     private var previousTime: TimeInterval = 0
     
-    private var sequencer: PatternSequencer!
     private var rows: [Row]!
     private var rowIndex: Int = 0
+    
+    init(size: CGSize, positioner: Positioner, sequencer: PatternSequencer) {
+        self.positioner = positioner
+        self.sequencer = sequencer
+        
+        super.init(size: size)
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func didMove(to view: SKView) {
         self.setup()
@@ -96,8 +109,7 @@ class GameScene: SKScene {
     }
     
     private func setup() {
-        self.positioner = DefaultPositioner(frame: self.frame, timeToMove: 0.07, tolerance: 0.4)
-        self.sequencer = PatternSequencer()
+        //self.sequencer = PatternSequencer()
         self.sequencer.load()
         self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
         self.rowIndex = 0
@@ -118,7 +130,7 @@ class GameScene: SKScene {
             
             let node = getNode(fromType: type)
             node.position.y = frame.maxY
-            node.position.x = self.laneToPosition(lane: pickup.lane)
+            node.position.x = self.laneToPosition(pickup.lane)
             
             let timeStep = CGFloat(0.1)
             let totalDistance = frame.maxY
@@ -152,7 +164,7 @@ class GameScene: SKScene {
         }
     }
     
-    private func laneToPosition(lane: Lane) -> CGFloat {
+    private func laneToPosition(_ lane: Lane) -> CGFloat {
         let laneIntValue = CGFloat(lane.rawValue)
         return frame.midX + (offset * laneIntValue)
     }
@@ -195,9 +207,9 @@ class GameScene: SKScene {
         // debug
         let positionMarker = self.debugPositionMarker!
         switch position.state {
-        case .inPosition(let positionOffset):
+        case .inLane(let lane):
             positionMarker.alpha = 1.0
-            positionMarker.position.x = frame.midX + (offset * CGFloat(positionOffset.rawValue))
+            positionMarker.position.x = self.laneToPosition(lane)
             positionMarker.position.y = self.kitty.position.y
         case .outOfPosition:
             positionMarker.alpha = 0.0
@@ -209,16 +221,29 @@ class GameScene: SKScene {
     }
 }
 
+// MARK: - Input
 extension GameScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.positioner?.touchPress(point: t.location(in: self)) }
+        for t in touches {
+            let point = t.location(in: self)
+            let input = pointToInput(point)
+            self.positioner.addInput(input)
+        }
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for _ in touches { self.positioner?.touchRelease() }
+        for _ in touches { self.positioner.removeInput() }
     }
     
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for _ in touches { self.positioner?.touchRelease() }
+        for _ in touches { self.positioner.removeInput() }
+    }
+    
+    private func pointToInput(_ point: CGPoint) -> PositionerInput {
+        assert(frame.contains(point))
+        
+        let x = point.x // ignore y, only care about x
+        if x < frame.midX   { return .left }
+        else                { return .right }
     }
 }

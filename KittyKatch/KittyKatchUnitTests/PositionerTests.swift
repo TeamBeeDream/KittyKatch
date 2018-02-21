@@ -16,13 +16,24 @@ class PositionerTests: XCTestCase {
     private let right: CGFloat  = +1.0
     private let center: CGFloat =  0.0
     
+    private let leftState = LaneState.inLane(.left)
+    
     private let leftTouch  = CGPoint(x: 0.25, y: 0.5)
     private let rightTouch = CGPoint(x: 0.75, y: 0.5)
+    
+    private let fullTimeStep    = 1.0
+    private let halfTimeStep    = 0.5
+    private let almostFullStep  = 0.9
+    
+    private let tolerance = 0.15
     
     override func setUp() {
         super.setUp()
         
-        self.positioner = DefaultPositioner(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        let timeToMove = CGFloat(self.fullTimeStep)
+        let tolerance = CGFloat(self.tolerance)
+        self.positioner = DefaultPositioner(timeToMove: timeToMove,
+                                            tolerance: tolerance)
     }
     
     override func tearDown() {
@@ -32,36 +43,84 @@ class PositionerTests: XCTestCase {
     }
     
     func testTouchLeft() {
-        self.positioner.touchPress(point: self.leftTouch)
-        XCTAssert(self.positioner.getPosition() == self.left)
+        self.positioner.addInput(.left)
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.left))
     }
     
     func testTouchRight() {
-        self.positioner.touchPress(point: self.rightTouch)
-        XCTAssert(self.positioner.getPosition() == self.right)
+        self.positioner.addInput(.right)
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.right))
     }
     
-    func testTouchLeftThenRight() {
-        self.positioner.touchPress(point: self.leftTouch)
-        self.positioner.touchPress(point: self.rightTouch)
-        XCTAssert(self.positioner.getPosition() == self.right)
+    func testTouchLeftRelease() {
+        self.positioner.addInput(.left)
+        self.positioner.removeInput()
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.center))
     }
     
-    func testTouchRightThenLeft() {
-        self.positioner.touchPress(point: self.rightTouch)
-        self.positioner.touchPress(point: self.leftTouch)
-        XCTAssert(self.positioner.getPosition() == self.left)
+    func testTouchRightRelease() {
+        self.positioner.addInput(.right)
+        self.positioner.removeInput()
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.center))
     }
     
-    func testTouchLeftThenRelease() {
-        self.positioner.touchPress(point: self.leftTouch)
-        self.positioner.touchRelease()
-        XCTAssert(self.positioner.getPosition() == self.center)
+    func testTouchLeftRight() {
+        self.positioner.addInput(.left)
+        self.positioner.addInput(.right)
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.right))
     }
     
-    func testTouchRightThenRelease() {
-        self.positioner.touchPress(point: self.rightTouch)
-        self.positioner.touchRelease()
-        XCTAssert(self.positioner.getPosition() == self.center)
+    func testTouchRightLeft() {
+        self.positioner.addInput(.right)
+        self.positioner.addInput(.left)
+        self.positioner.update(dt: self.fullTimeStep)
+        XCTAssert(isInLane(.left))
+    }
+    
+    func testWithinTolerance() {
+        self.positioner.addInput(.left)
+        self.positioner.update(dt: self.almostFullStep)
+        XCTAssert(isInLane(.left))
+    }
+    
+    func testOutOfPosition() {
+        self.positioner.addInput(.left)
+        self.positioner.update(dt: self.halfTimeStep)
+        XCTAssert(isOutOfPosition())
+    }
+}
+
+// MARK: - Helpers
+extension PositionerTests {
+    
+    /**
+     Determine if positioner is in the given lane.
+     */
+    private func isInLane(_ lane: Lane) -> Bool {
+        let position = self.positioner.getPosition()
+        switch position.state {
+        case .inLane(let l):
+            return lane == l
+        case .outOfPosition:
+            return false
+        }
+    }
+    
+    /**
+     Determine if positioner is out of position.
+     */
+    private func isOutOfPosition() -> Bool {
+        let position = self.positioner.getPosition()
+        switch position.state {
+        case .outOfPosition:
+            return true
+        default:
+            return false
+        }
     }
 }

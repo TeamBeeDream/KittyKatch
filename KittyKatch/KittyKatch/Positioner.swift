@@ -17,58 +17,70 @@ enum Lane: Int {
     static let count = 3
 }
 
-enum PositionState {
-    case inPosition(Lane)
+enum LaneState {
+    case inLane(Lane)
     case outOfPosition
 }
 
 struct Position {
-    var state: PositionState
+    var state: LaneState
     var offset: CGFloat
 }
 
-class DefaultPositioner {
+enum PositionerInput: Int {
+    case left   = -1
+    case right  =  1
+}
+
+protocol Positioner {
+    func addInput(_ input: PositionerInput)
+    func removeInput()
+    
+    func update(dt: Double)
+    func getPosition() -> Position
+}
+
+// MARK: - State
+class DefaultPositioner : Positioner {
     private let tolerance: CGFloat
     private let timeToMove: CGFloat
-    private let frame: CGRect
     
-    private var touchCount: Int = 0
+    private var inputCount: Int = 0
     private var targetPosition: CGFloat = 0.0
     private var currentPosition: CGFloat = 0.0
     
-    init(frame: CGRect, timeToMove: CGFloat, tolerance: CGFloat) {
-        self.frame = frame
+    init(timeToMove: CGFloat, tolerance: CGFloat) {
+        assert(timeToMove > 0.0)
+        assert(tolerance > 0.0)
+        
         self.tolerance = tolerance
         self.timeToMove = timeToMove
     }
-    
-    func touchPress(point: CGPoint) {
-        // ignore touches outside of frame
-        if !frame.contains(point) {
-            return
-        }
+}
+
+// MARK: - Input
+extension DefaultPositioner {
+    func addInput(_ input: PositionerInput) {
+        self.inputCount += 1
+        self.targetPosition = CGFloat(input.rawValue)
         
-        // determine if press is on left or right,
-        // override current position
-        self.targetPosition = (point.x < frame.midX)
-            ? -1.0  // left
-            : +1.0  // right
-        self.touchCount += 1
+        assert(self.inputCount >= 0)
     }
     
-    func touchRelease() {
-        self.touchCount -= 1
+    func removeInput() {
+        self.inputCount -= 1
+        if (self.inputCount == 0) { self.targetPosition = 0.0 }
         
-        // if no more touches, reset to center
-        if (self.touchCount == 0) {
-            self.targetPosition = 0.0
-        }
+        assert(self.inputCount >= 0)
     }
-    
+}
+
+// MARK: - Update
+extension DefaultPositioner {
     func update(dt: Double) {
         let delta = CGFloat(dt)
         let diff = self.targetPosition - self.currentPosition
-        let step = delta / self.timeToMove // @TODO: assert: [0, 1]
+        let step = delta / self.timeToMove
         let deltaX = self.easing(t: step)
         
         self.currentPosition += diff * deltaX
@@ -78,28 +90,27 @@ class DefaultPositioner {
     private func easing(t: CGFloat) -> CGFloat {
         return t
     }
-    
+}
+
+// MARK: - Positioning
+extension DefaultPositioner {
     func getPosition() -> Position {
         return Position(state: self.getState(), offset: self.getOffset())
     }
     
-    private func getState() -> PositionState {
-        let left: Int = -1
-        let center: Int = 0
-        let right: Int = +1
-        
-        if fabs(self.currentPosition - CGFloat(left)) < self.tolerance {
-            return .inPosition(.left)
-        } else if fabs(self.currentPosition - CGFloat(center)) < self.tolerance {
-            return .inPosition(.center)
-        } else if fabs(self.currentPosition - CGFloat(right)) < self.tolerance {
-            return .inPosition(.right)
-        }
+    private func getOffset() -> CGFloat {
+        return self.currentPosition
+    }
+    
+    private func getState() -> LaneState {
+        if isInLane(.left)      { return .inLane(.left) }
+        if isInLane(.center)    { return .inLane(.center) }
+        if isInLane(.right)     { return .inLane(.right) }
         
         return .outOfPosition
     }
     
-    private func getOffset() -> CGFloat {
-        return self.currentPosition
+    private func isInLane(_ lane: Lane) -> Bool {
+        return fabs(self.currentPosition - CGFloat(lane.rawValue)) < self.tolerance
     }
 }
