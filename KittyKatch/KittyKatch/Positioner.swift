@@ -42,6 +42,7 @@ class DefaultPositioner : Positioner {
 
 // MARK: - Input
 extension DefaultPositioner {
+    // @TODO: Fix bug, need better tracking of touch inputs.
     func addInput(_ input: PositionerInput) {
         self.inputCount += 1
         self.targetPosition = CGFloat(input.rawValue)
@@ -93,6 +94,8 @@ extension DefaultPositioner {
     }
     
     private func isInLane(_ lane: Lane) -> Bool {
-        return fabs(self.currentPosition - CGFloat(lane.rawValue)) < self.tolerance
+        let laneValue = CGFloat(lane.rawValue)
+        if laneValue != self.targetPosition { return false }
+        return fabs(self.currentPosition - laneValue) < self.tolerance
     }
 }
