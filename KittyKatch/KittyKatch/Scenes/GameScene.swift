@@ -73,7 +73,8 @@ class GameScene: SKScene {
         addChild(label)
         self.label = label
         
-        let kitty = SKShapeNode(rectOf: CGSize(width: 100, height: 100), cornerRadius: 5)
+        let kittySize = self.resolver.getTolerance()
+        let kitty = SKShapeNode(rectOf: CGSize(width: kittySize.x, height: kittySize.y), cornerRadius: 5)
         kitty.position = CGPoint(x: frame.midX, y: frame.maxX * 0.2)
         kitty.fillColor = SKColor.blue
         kitty.strokeColor = SKColor.clear
@@ -136,6 +137,7 @@ class GameScene: SKScene {
             let pickupNode = PickupNode(
                 data: pickup,
                 node: node,
+                travelTime: 1,    // @HARDCODED
                 positioner: self.positioner,
                 coordinates: self.coordinates,
                 resolver: self.resolver)

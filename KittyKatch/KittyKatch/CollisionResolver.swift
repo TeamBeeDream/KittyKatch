@@ -11,6 +11,7 @@ import SpriteKit
 
 protocol CollisionResolver {
     func didCollide(origin: CGPoint, point: CGPoint) -> Bool
+    func getTolerance() -> CGPoint
 }
 
 class DefaultCollisionResolver {
@@ -29,5 +30,9 @@ extension DefaultCollisionResolver: CollisionResolver {
         let diffY = fabs(origin.y - point.y)
         
         return diffX < self.toleranceX && diffY < self.toleranceY
+    }
+    
+    func getTolerance() -> CGPoint {
+        return CGPoint(x: self.toleranceX, y: self.toleranceY)
     }
 }

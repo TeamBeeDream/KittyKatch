@@ -11,17 +11,20 @@ import SpriteKit
 
 class PickupNode {
     private let data: Pickup
+    private let travelTime: CGFloat
     private let node: SKNode!
     private let positioner: Positioner!
     private let coordinates: Coordinates!
     private let resolver: CollisionResolver!
     
     init(data: Pickup, node: SKNode,
+         travelTime: CGFloat,
          positioner: Positioner,
          coordinates: Coordinates,
          resolver: CollisionResolver) {
         self.data = data
         self.node = node
+        self.travelTime = travelTime
         self.positioner = positioner
         self.coordinates = coordinates
         self.resolver = resolver
@@ -33,41 +36,41 @@ class PickupNode {
         
         self.node.position = top
         
-        let move = getMoveAction(destination: bottom, duration: 1.0)
-        let collision = getCollisionAction()
-        let delete = getDeleteAction()
-        let wait = SKAction.wait(forDuration: TimeInterval(0.1))
-        
-        let group = SKAction.group([
-            SKAction.sequence([move, delete]),
-            SKAction.repeatForever(SKAction.sequence([collision, wait]))])
-        
-        self.node.run(group)
+        // actions
+        let move = getMoveAction(destination: bottom, duration: self.travelTime)
+        let collision = getCollisionAction(dt: self.travelTime / 20) // @HARDCODED, 20 steps total
+        self.node.run(SKAction.group([move, collision]))
     }
 }
 
 extension PickupNode {
     private func getMoveAction(destination: CGPoint, duration: CGFloat) -> SKAction {
         let time = TimeInterval(duration)
-        
-        return SKAction.move(to: destination, duration: time)
+        return SKAction.sequence([
+            SKAction.move(to: destination, duration: time),
+            SKAction.removeFromParent()])
     }
     
-    private func getDeleteAction() -> SKAction {
-        let fadeOut = SKAction.fadeOut(withDuration: TimeInterval(0.2))
-        let shrink = SKAction.scale(by: -1, duration: TimeInterval(0.2))
-        let remove = SKAction.removeFromParent()
-        
-        return SKAction.sequence([SKAction.group([fadeOut, shrink]), remove])
-    }
-    
-    private func getCollisionAction() -> SKAction {
-        return SKAction.run {
+    private func getCollisionAction(dt: CGFloat) -> SKAction {
+        let collision = SKAction.run {
             if self.didCollide(lane: self.data.lane, type: self.data.type) {
                 self.node.removeAllActions()
-                self.node.run(self.getDeleteAction())
+                self.node.run(self.getCollectAndDeleteSequence())
             }
         }
+        let wait = SKAction.wait(forDuration: TimeInterval(dt))
+        
+        return SKAction.repeatForever(SKAction.sequence([collision, wait]))
+    }
+    
+    private func getCollectAndDeleteSequence() -> SKAction {
+        let move = SKAction.move(to: self.coordinates.laneToPosition(self.data.lane), duration: 0.1)
+        let fadeOut = SKAction.fadeOut(withDuration: TimeInterval(0.2))
+        let shrink = SKAction.scale(by: -1, duration: TimeInterval(0.2))
+        
+        return SKAction.sequence([
+            SKAction.group([move, fadeOut, shrink]),
+            SKAction.removeFromParent()])
     }
 }
 
