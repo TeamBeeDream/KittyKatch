@@ -15,6 +15,7 @@ class GameScene: SKScene {
     // PARAMETERS
     private let positioner: Positioner!
     private let sequencer: PatternSequencer!
+    private let resolver: CollisionResolver!
     
     // DIFFICULTY SETTINGS
     private let toleranceX = 35.0
@@ -45,9 +46,14 @@ class GameScene: SKScene {
     private var rows: [Row]!
     private var rowIndex: Int = 0
     
-    init(size: CGSize, positioner: Positioner, sequencer: PatternSequencer) {
+    init(size: CGSize,
+         positioner: Positioner,
+         sequencer: PatternSequencer,
+         resolver: CollisionResolver) {
+        
         self.positioner = positioner
         self.sequencer = sequencer
+        self.resolver = resolver
         
         super.init(size: size)
     }
@@ -118,18 +124,33 @@ class GameScene: SKScene {
             node.position.y = frame.maxY
             node.position.x = self.laneToPosition(pickup.lane)
             
-            let timeStep = CGFloat(0.1)
+            //let timeStep = CGFloat(0.1)
             let totalDistance = frame.maxY
             let totalTime = CGFloat(2.0)
-            let vecStep = totalDistance / (totalTime / timeStep)
+            //let vecStep = totalDistance / (totalTime / timeStep)
             
-            let moveVector = CGVector(dx: 0, dy: -vecStep)
+            //let moveVector = CGVector(dx: 0, dy: -vecStep)
+            let moveVector = CGVector(dx: 0, dy: -totalDistance)
             
             // actions
+            /*
             node.run(SKAction.repeatForever(
                 SKAction.sequence([
                     SKAction.move(by: moveVector, duration: TimeInterval(timeStep)),
-                    SKAction.run { self.checkCollision(pickup: node, good: type == .good) }])))
+                    //SKAction.run { self.checkCollision(pickup: node, good: type == .good) }])))
+                    SKAction.run { self.checkCollision(lane: pickup.lane, type: pickup.type, node: node) }])))*/
+            let moveAction = SKAction.move(by: moveVector, duration: TimeInterval(totalTime))
+            let collisionAction = SKAction.run { self.checkCollision(lane: pickup.lane, type: pickup.type, node: node) }
+            let deleteAction = SKAction.run {
+                node.removeAllActions()
+                node.removeFromParent()
+            }
+            let waitAction = SKAction.wait(forDuration: TimeInterval(0.1))
+            
+            let actionGroup = SKAction.group([
+                SKAction.sequence([moveAction, deleteAction]),
+                SKAction.repeatForever(SKAction.sequence([collisionAction, waitAction]))])
+            node.run(actionGroup)
             
             addChild(node)
             
@@ -155,6 +176,24 @@ class GameScene: SKScene {
         return frame.midX + (offset * laneIntValue)
     }
     
+    func checkCollision(lane: Lane, type: PickupType, node: SKNode) {
+        let position = self.positioner.getPosition()
+        switch position.state {
+        case .outOfPosition:
+            return
+        case .inLane(let positionerLane):
+            if lane != positionerLane { return }
+            
+            let origin = CGPoint(x: laneToPosition(lane), y: self.kitty.position.y)
+            let col = self.resolver.didCollide(origin: origin, point: node.position)
+            if col {
+                node.removeAllActions()
+                //node.removeFromParent()
+            }
+        }
+    }
+    
+    /*
     func checkCollision(pickup: SKNode, good: Bool) {
         let diffX = fabs(self.kitty.position.x - pickup.position.x)
         let diffY = fabs(self.kitty.position.y - pickup.position.y)
@@ -176,6 +215,7 @@ class GameScene: SKScene {
             self.updateUI()
         }
     }
+ */
     
     override func update(_ currentTime: TimeInterval) {
         // calculate timestep

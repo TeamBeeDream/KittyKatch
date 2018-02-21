@@ -14,13 +14,17 @@ class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        let size = view.bounds.size
+        
         // @TODO: connect to config file
         let positioner = DefaultPositioner(timeToMove: 0.075, tolerance: 0.35)
         let sequencer = DefaultPatternSequencer(filePath: Bundle.main.path(forResource: "AllPatterns", ofType: "txt")!)
+        let resolver = DefaultCollisionResolver(toleranceX: 35.0, toleranceY: 35.0)
         
-        let scene = GameScene(size: view.bounds.size,
+        let scene = GameScene(size: size,
                               positioner: positioner,
-                              sequencer: sequencer)
+                              sequencer: sequencer,
+                              resolver: resolver)
         scene.scaleMode = .aspectFill
         
         let skView = view as! SKView
