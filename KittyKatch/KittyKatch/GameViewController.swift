@@ -14,14 +14,15 @@ class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let size = view.bounds.size
+        //let size = view.bounds.size
+        let frame = view.bounds
         
         // @TODO: connect to config file
         let positioner = DefaultPositioner(timeToMove: 0.075, tolerance: 0.35)
         let sequencer = DefaultPatternSequencer(filePath: Bundle.main.path(forResource: "AllPatterns", ofType: "txt")!)
-        let resolver = DefaultCollisionResolver(toleranceX: 35.0, toleranceY: 35.0)
+        let resolver = DefaultCollisionResolver(toleranceX: 35.0, toleranceY: 75.0)
         
-        let scene = GameScene(size: size,
+        let scene = GameScene(frame: frame,
                               positioner: positioner,
                               sequencer: sequencer,
                               resolver: resolver)

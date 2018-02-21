@@ -16,14 +16,12 @@ class GameScene: SKScene {
     private let positioner: Positioner!
     private let sequencer: PatternSequencer!
     private let resolver: CollisionResolver!
+    private let coordinates: Coordinates!
     
     // DIFFICULTY SETTINGS
-    private let toleranceX = 35.0
-    private let toleranceY = 35.0
     private let spawnRate = 0.3
     
     // stuff
-    private let offset : CGFloat = 75.0
     private var collected : Int = 0
     private var pickupCount : Int = 100
     
@@ -46,7 +44,7 @@ class GameScene: SKScene {
     private var rows: [Row]!
     private var rowIndex: Int = 0
     
-    init(size: CGSize,
+    init(frame: CGRect,
          positioner: Positioner,
          sequencer: PatternSequencer,
          resolver: CollisionResolver) {
@@ -55,7 +53,9 @@ class GameScene: SKScene {
         self.sequencer = sequencer
         self.resolver = resolver
         
-        super.init(size: size)
+        self.coordinates = Coordinates(frame: frame, laneOffset: 0.50, playerVerticalOffset: -0.66)
+        
+        super.init(size: frame.size)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -63,7 +63,7 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
-        backgroundColor = SKColor.black
+        backgroundColor = SKColor.gray
         
         let label = SKLabelNode(fontNamed: "Chalkduster")
         label.text = "Kitty Katch"
@@ -90,11 +90,19 @@ class GameScene: SKScene {
         badObj.fillColor = SKColor.red
         self.badObj = badObj
         
+        // debug marker
         let debugPositionMarker = SKShapeNode(circleOfRadius: 10)
         debugPositionMarker.strokeColor = SKColor.white
         debugPositionMarker.fillColor = SKColor.clear
         self.debugPositionMarker = debugPositionMarker
         addChild(debugPositionMarker)
+        
+        // debug lines
+        self.drawDebugLine(a: self.coordinates.laneToPosition(.left), b: self.coordinates.laneToPosition(.right))
+        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .left, y: -1), b: self.coordinates.lanePoint(lane: .left, y: 1))
+        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .center, y: -1), b: self.coordinates.lanePoint(lane: .center, y: 1))
+        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .right, y: -1), b: self.coordinates.lanePoint(lane: .right, y: 1))
+        //
         
         self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
         self.rowIndex = 0
@@ -115,44 +123,23 @@ class GameScene: SKScene {
             withKey: key)
     }
     
+    
+    
     private func spawnRow(row: Row) {
         for pickup in row.pickups {
             let type = pickup.type
             if type == .none { continue }
             
             let node = getNode(fromType: type)
-            node.position.y = frame.maxY
-            node.position.x = self.laneToPosition(pickup.lane)
-            
-            //let timeStep = CGFloat(0.1)
-            let totalDistance = frame.maxY
-            let totalTime = CGFloat(2.0)
-            //let vecStep = totalDistance / (totalTime / timeStep)
-            
-            //let moveVector = CGVector(dx: 0, dy: -vecStep)
-            let moveVector = CGVector(dx: 0, dy: -totalDistance)
-            
-            // actions
-            /*
-            node.run(SKAction.repeatForever(
-                SKAction.sequence([
-                    SKAction.move(by: moveVector, duration: TimeInterval(timeStep)),
-                    //SKAction.run { self.checkCollision(pickup: node, good: type == .good) }])))
-                    SKAction.run { self.checkCollision(lane: pickup.lane, type: pickup.type, node: node) }])))*/
-            let moveAction = SKAction.move(by: moveVector, duration: TimeInterval(totalTime))
-            let collisionAction = SKAction.run { self.checkCollision(lane: pickup.lane, type: pickup.type, node: node) }
-            let deleteAction = SKAction.run {
-                node.removeAllActions()
-                node.removeFromParent()
-            }
-            let waitAction = SKAction.wait(forDuration: TimeInterval(0.1))
-            
-            let actionGroup = SKAction.group([
-                SKAction.sequence([moveAction, deleteAction]),
-                SKAction.repeatForever(SKAction.sequence([collisionAction, waitAction]))])
-            node.run(actionGroup)
-            
             addChild(node)
+            
+            let pickupNode = PickupNode(
+                data: pickup,
+                node: node,
+                positioner: self.positioner,
+                coordinates: self.coordinates,
+                resolver: self.resolver)
+            pickupNode.activate()
             
             if type == .good {
                 self.pickupCount -= 1
@@ -171,52 +158,6 @@ class GameScene: SKScene {
         }
     }
     
-    private func laneToPosition(_ lane: Lane) -> CGFloat {
-        let laneIntValue = CGFloat(lane.rawValue)
-        return frame.midX + (offset * laneIntValue)
-    }
-    
-    func checkCollision(lane: Lane, type: PickupType, node: SKNode) {
-        let position = self.positioner.getPosition()
-        switch position.state {
-        case .outOfPosition:
-            return
-        case .inLane(let positionerLane):
-            if lane != positionerLane { return }
-            
-            let origin = CGPoint(x: laneToPosition(lane), y: self.kitty.position.y)
-            let col = self.resolver.didCollide(origin: origin, point: node.position)
-            if col {
-                node.removeAllActions()
-                //node.removeFromParent()
-            }
-        }
-    }
-    
-    /*
-    func checkCollision(pickup: SKNode, good: Bool) {
-        let diffX = fabs(self.kitty.position.x - pickup.position.x)
-        let diffY = fabs(self.kitty.position.y - pickup.position.y)
-        let tolerance : CGFloat = 35.0
-        if pickup.position.y < self.frame.minY {
-            pickup.removeAllActions()
-            pickup.run(SKAction.removeFromParent())
-        } else if diffX < tolerance && diffY < tolerance {
-            pickup.removeAllActions()
-            pickup.run(SKAction.sequence([
-                SKAction.scale(by: CGFloat(2.0), duration: 0.2),
-                SKAction.removeFromParent()]))
-            
-            if good {
-                self.collected += 1
-            } else {
-                self.collected = Int(round(Double(self.collected) * 0.85))
-            }
-            self.updateUI()
-        }
-    }
- */
-    
     override func update(_ currentTime: TimeInterval) {
         // calculate timestep
         var delta = currentTime - self.previousTime
@@ -228,15 +169,14 @@ class GameScene: SKScene {
         
         // reposition kitty
         let position = self.positioner.getPosition()
-        self.kitty.position.x = frame.midX + (offset * position.offset)
+        self.kitty.position = self.coordinates.positionToPoint(position)
         
         // debug
         let positionMarker = self.debugPositionMarker!
         switch position.state {
         case .inLane(let lane):
             positionMarker.alpha = 1.0
-            positionMarker.position.x = self.laneToPosition(lane)
-            positionMarker.position.y = self.kitty.position.y
+            positionMarker.position = self.coordinates.laneToPosition(lane)
         case .outOfPosition:
             positionMarker.alpha = 0.0
         }
@@ -271,5 +211,19 @@ extension GameScene {
         let x = point.x // ignore y, only care about x
         if x < frame.midX   { return .left }
         else                { return .right }
+    }
+}
+
+// MARK: - Debug
+extension GameScene {
+    private func drawDebugLine(a: CGPoint, b: CGPoint) {
+        let node = SKShapeNode()
+        let path = UIBezierPath()
+        path.move(to: a)
+        path.addLine(to: b)
+        node.path = path.cgPath
+        node.strokeColor = SKColor.white
+        node.lineWidth = 1
+        addChild(node)
     }
 }
