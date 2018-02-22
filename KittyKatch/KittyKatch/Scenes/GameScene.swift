@@ -21,15 +21,15 @@ class GameScene: SKScene {
     // DIFFICULTY SETTINGS
     private let spawnRate = 0.3
     
-    // stuff
+    // State
     private var collected : Int = 0
     private var pickupCount : Int = 100
     
     // UI
-    private var label : SKLabelNode!
+    private var scoreText : SKLabelNode!
     
     // KITTY
-    private var kitty : SKShapeNode!
+    private var kitty : SKNode!
     
     // DEBUG
     private var debugPositionMarker: SKShapeNode!
@@ -53,7 +53,7 @@ class GameScene: SKScene {
         self.sequencer = sequencer
         self.resolver = resolver
         
-        self.coordinates = Coordinates(frame: frame, laneOffset: 0.50, playerVerticalOffset: -0.66)
+        self.coordinates = Coordinates(frame: frame, laneOffset: 0.50, playerVerticalOffset: -0.66) // @FIXME: this should probably be configured outside of this class
         
         super.init(size: frame.size)
     }
@@ -65,19 +65,21 @@ class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.gray
         
-        let label = SKLabelNode(fontNamed: "Chalkduster")
-        label.text = "Kitty Katch"
-        label.position = CGPoint(x: frame.midX, y: frame.maxY * 0.9)
-        label.color = SKColor.white
-        label.fontSize = 35
-        addChild(label)
-        self.label = label
+        let scoreText = SKLabelNode(fontNamed: "Chalkduster")
+        scoreText.text = "0"
+        scoreText.position = CGPoint(x: frame.midX, y: frame.maxY * 0.9)
+        scoreText.color = SKColor.white
+        scoreText.fontSize = 35
+        addChild(scoreText)
+        self.scoreText = scoreText
         
-        let kittySize = self.resolver.getTolerance()
-        let kitty = SKShapeNode(rectOf: CGSize(width: kittySize.x, height: kittySize.y), cornerRadius: 5)
+        //let kittySize = self.resolver.getTolerance()
+        //let kitty = SKShapeNode(rectOf: CGSize(width: kittySize.x, height: kittySize.y), cornerRadius: 5)
+        let kittyWidth = self.coordinates.getScreenWidth() * 0.3
+        let kitty = SKSpriteNode(imageNamed: "Kitty")
+        kitty.size = CGSize(width: kittyWidth, height: kittyWidth)
         kitty.position = CGPoint(x: frame.midX, y: frame.maxX * 0.2)
-        kitty.fillColor = SKColor.blue
-        kitty.strokeColor = SKColor.clear
+        kitty.zPosition = -10
         addChild(kitty)
         self.kitty = kitty
         
@@ -113,8 +115,11 @@ class GameScene: SKScene {
             SKAction.sequence([
                 SKAction.wait(forDuration: self.spawnRate),
                 SKAction.run({
-                    if self.pickupCount <= 0 {
+                    if self.pickupCount <= 0 { // done
                         self.removeAction(forKey: key)
+                        self.run(SKAction.sequence([
+                            SKAction.wait(forDuration: 3),
+                            SKAction.run{ self.roundOver() }]))
                     } else {
                         // temp
                         self.spawnRow(row: self.rows[self.rowIndex])
@@ -124,8 +129,21 @@ class GameScene: SKScene {
             withKey: key)
     }
     
+    private func roundOver() {
+        print("DONE") // @TODO: actually do something when game is over
+    }
+    
     func handleCollect(data: Pickup) {
-        //print("COLLECTED:", data.type, self.count)
+        switch data.type {
+        case .good:
+            self.collected += 1
+        case .bad:
+            self.collected = Int(round(Double(self.collected) * 0.85)) // @FIXME: gross
+        case .none:
+            break // shouldn't happen
+        }
+        
+        self.updateScoreText()
     }
     
     private func spawnRow(row: Row) {
@@ -144,7 +162,7 @@ class GameScene: SKScene {
                 positioner: self.positioner,
                 coordinates: self.coordinates,
                 resolver: self.resolver)
-            pickupNode.collectEvent.addHandler(target: self, handler: GameScene.handleCollect) // @FIXME: figure out how to handle return value
+            let _ = pickupNode.collectEvent.addHandler(target: self, handler: GameScene.handleCollect) // @FIXME: figure out how to handle return value
             pickupNode.activate()
             
             if type == .good {
@@ -188,9 +206,6 @@ class GameScene: SKScene {
         }
     }
     
-    func updateUI() {
-        self.label.text = String(format: "%d", self.collected)
-    }
 }
 
 // MARK: - Input
@@ -217,6 +232,13 @@ extension GameScene {
         let x = point.x // ignore y, only care about x
         if x < frame.midX   { return .left }
         else                { return .right }
+    }
+}
+
+// MARK: - UI
+extension GameScene {
+    private func updateScoreText() {
+        self.scoreText.text = String(format: "%d", self.collected)
     }
 }
 
