@@ -53,7 +53,7 @@ class GameScene: SKScene {
         self.sequencer = sequencer
         self.resolver = resolver
         
-        self.coordinates = Coordinates(frame: frame, laneOffset: 0.50, playerVerticalOffset: -0.66) // @FIXME: this should probably be configured outside of this class
+        self.coordinates = Coordinates(frame: frame, laneOffsetX: 0.50, laneOffsetY: 0.66) // @FIXME: this should probably be configured outside of this class
         
         super.init(size: frame.size)
     }
@@ -81,16 +81,16 @@ class GameScene: SKScene {
         addChild(background)
         
         // kitty
-        let kittyWidth = self.coordinates.getScreenWidth() * 0.3
+        let kittyWidth = self.coordinates.getSize().width * 0.3
         let kitty = SKSpriteNode(imageNamed: "Kitty")
         kitty.size = CGSize(width: kittyWidth, height: kittyWidth)
-        kitty.position = CGPoint(x: frame.midX, y: frame.maxX * 0.2)
+        kitty.position = self.coordinates.laneToPoint(.center)
         kitty.zPosition = -10
         addChild(kitty)
         self.kitty = kitty
         
         // fish
-        let pickupWidth = self.coordinates.getScreenWidth() * 0.175
+        let pickupWidth = self.coordinates.getSize().width * 0.175
         let pickup = SKSpriteNode(imageNamed: "Fish")
         pickup.size = CGSize(width: pickupWidth, height: pickupWidth)
         self.pickup = pickup
@@ -108,10 +108,10 @@ class GameScene: SKScene {
         addChild(debugPositionMarker)
         
         // debug lines
-        self.drawDebugLine(a: self.coordinates.laneToPosition(.left), b: self.coordinates.laneToPosition(.right))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .left, y: -1), b: self.coordinates.lanePoint(lane: .left, y: 1))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .center, y: -1), b: self.coordinates.lanePoint(lane: .center, y: 1))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .right, y: -1), b: self.coordinates.lanePoint(lane: .right, y: 1))
+        self.drawDebugLine(a: self.coordinates.laneToPoint(.left), b: self.coordinates.laneToPoint(.right))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .left, y: -1), b: self.coordinates.pointOnLane(lane: .left, y: 1))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .center, y: -1), b: self.coordinates.pointOnLane(lane: .center, y: 1))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .right, y: -1), b: self.coordinates.pointOnLane(lane: .right, y: 1))
         //
         
         self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
@@ -207,12 +207,11 @@ class GameScene: SKScene {
         switch position.state {
         case .inLane(let lane):
             positionMarker.alpha = 1.0
-            positionMarker.position = self.coordinates.laneToPosition(lane)
+            positionMarker.position = self.coordinates.laneToPoint(lane)
         case .outOfPosition:
             positionMarker.alpha = 0.0
         }
     }
-    
 }
 
 // MARK: - Input

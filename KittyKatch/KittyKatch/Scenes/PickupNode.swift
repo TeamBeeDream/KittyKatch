@@ -34,8 +34,8 @@ class PickupNode {
     }
     
     func activate() {
-        let top = self.coordinates.lanePoint(lane: self.data.lane, y: -1)
-        let bottom = self.coordinates.lanePoint(lane: self.data.lane, y: 1)
+        let top = self.coordinates.pointOnLane(lane: self.data.lane, y: -1)
+        let bottom = self.coordinates.pointOnLane(lane: self.data.lane, y: 1)
         
         self.node.position = top
         
@@ -71,7 +71,7 @@ extension PickupNode {
     }
     
     private func getCollectAndDeleteSequence() -> SKAction {
-        let move = SKAction.move(to: self.coordinates.laneToPosition(self.data.lane), duration: 0.1)
+        let move = SKAction.move(to: self.coordinates.laneToPoint(self.data.lane), duration: 0.1)
         let fadeOut = SKAction.fadeOut(withDuration: TimeInterval(0.2))
         let shrink = SKAction.scale(to: 0, duration: TimeInterval(0.2))
         
@@ -90,7 +90,7 @@ extension PickupNode {
         case .inLane(let positionerLane):
             if lane != positionerLane { return false }
             
-            let origin = self.coordinates.laneToPosition(lane)
+            let origin = self.coordinates.laneToPoint(lane)
             return self.resolver.didCollide(origin: origin, point: self.node.position)
         }
     }
