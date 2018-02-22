@@ -17,7 +17,7 @@ class GameViewController: UIViewController {
         // @TODO: connect to config file
         let frame = view.bounds
         let positioner = DefaultPositioner(timeToMove: 0.075, tolerance: 0.35)
-        let sequencer = DefaultPatternSequencer(filePath: Bundle.main.path(forResource: "AllPatterns", ofType: "txt")!)
+        let sequencer = DefaultPatternSequencer(filePath: Bundle.main.path(forResource: "AllPatterns", ofType: "txt")!, padding: 1)
         let resolver = DefaultCollisionResolver(toleranceX: 35.0, toleranceY: 45.0)
         
         let scene = GameScene(frame: frame,
