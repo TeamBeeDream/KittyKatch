@@ -73,8 +73,14 @@ class GameScene: SKScene {
         addChild(scoreText)
         self.scoreText = scoreText
         
-        //let kittySize = self.resolver.getTolerance()
-        //let kitty = SKShapeNode(rectOf: CGSize(width: kittySize.x, height: kittySize.y), cornerRadius: 5)
+        // background
+        let shader = SKShader(fileNamed: "shadertest.fsh")
+        let background = SKShapeNode(rect: frame)
+        background.fillShader = shader
+        background.zPosition = -100
+        addChild(background)
+        
+        // kitty
         let kittyWidth = self.coordinates.getScreenWidth() * 0.3
         let kitty = SKSpriteNode(imageNamed: "Kitty")
         kitty.size = CGSize(width: kittyWidth, height: kittyWidth)
