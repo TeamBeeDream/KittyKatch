@@ -21,22 +21,22 @@ class GameScene: SKScene {
     // DIFFICULTY SETTINGS
     private let spawnRate = 0.3
     
-    // stuff
+    // State
     private var collected : Int = 0
     private var pickupCount : Int = 100
     
     // UI
-    private var label : SKLabelNode!
+    private var scoreText : SKLabelNode!
     
     // KITTY
-    private var kitty : SKShapeNode!
+    private var kitty : SKNode!
     
     // DEBUG
     private var debugPositionMarker: SKShapeNode!
     
     // PICKUPS
-    private var pickup : SKShapeNode!
-    private var badObj : SKShapeNode!
+    private var pickup : SKNode!
+    private var badObj : SKNode!
     
     // TIMING
     private var previousTime: TimeInterval = 0
@@ -53,7 +53,7 @@ class GameScene: SKScene {
         self.sequencer = sequencer
         self.resolver = resolver
         
-        self.coordinates = Coordinates(frame: frame, laneOffset: 0.50, playerVerticalOffset: -0.66)
+        self.coordinates = Coordinates(frame: frame, laneOffsetX: 0.50, laneOffsetY: 0.66) // @FIXME: this should probably be configured outside of this class
         
         super.init(size: frame.size)
     }
@@ -65,25 +65,34 @@ class GameScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.gray
         
-        let label = SKLabelNode(fontNamed: "Chalkduster")
-        label.text = "Kitty Katch"
-        label.position = CGPoint(x: frame.midX, y: frame.maxY * 0.9)
-        label.color = SKColor.white
-        label.fontSize = 35
-        addChild(label)
-        self.label = label
+        let scoreText = SKLabelNode(fontNamed: "Chalkduster")
+        scoreText.text = "0"
+        scoreText.position = CGPoint(x: frame.midX, y: frame.maxY * 0.9)
+        scoreText.color = SKColor.white
+        scoreText.fontSize = 35
+        addChild(scoreText)
+        self.scoreText = scoreText
         
-        let kittySize = self.resolver.getTolerance()
-        let kitty = SKShapeNode(rectOf: CGSize(width: kittySize.x, height: kittySize.y), cornerRadius: 5)
-        kitty.position = CGPoint(x: frame.midX, y: frame.maxX * 0.2)
-        kitty.fillColor = SKColor.blue
-        kitty.strokeColor = SKColor.clear
+        // background
+        let shader = SKShader(fileNamed: "shadertest.fsh")
+        let background = SKShapeNode(rect: frame)
+        background.fillShader = shader
+        background.zPosition = -100
+        addChild(background)
+        
+        // kitty
+        let kittyWidth = self.coordinates.getSize().width * 0.3
+        let kitty = SKSpriteNode(imageNamed: "Kitty")
+        kitty.size = CGSize(width: kittyWidth, height: kittyWidth)
+        kitty.position = self.coordinates.laneToPoint(.center)
+        kitty.zPosition = -10
         addChild(kitty)
         self.kitty = kitty
         
-        let pickup = SKShapeNode(circleOfRadius: 20)
-        pickup.strokeColor = SKColor.clear
-        pickup.fillColor = SKColor.green
+        // fish
+        let pickupWidth = self.coordinates.getSize().width * 0.175
+        let pickup = SKSpriteNode(imageNamed: "Fish")
+        pickup.size = CGSize(width: pickupWidth, height: pickupWidth)
         self.pickup = pickup
         
         let badObj = SKShapeNode(circleOfRadius: 20)
@@ -99,22 +108,26 @@ class GameScene: SKScene {
         addChild(debugPositionMarker)
         
         // debug lines
-        self.drawDebugLine(a: self.coordinates.laneToPosition(.left), b: self.coordinates.laneToPosition(.right))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .left, y: -1), b: self.coordinates.lanePoint(lane: .left, y: 1))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .center, y: -1), b: self.coordinates.lanePoint(lane: .center, y: 1))
-        self.drawDebugLine(a: self.coordinates.lanePoint(lane: .right, y: -1), b: self.coordinates.lanePoint(lane: .right, y: 1))
+        self.drawDebugLine(a: self.coordinates.laneToPoint(.left), b: self.coordinates.laneToPoint(.right))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .left, y: -1), b: self.coordinates.pointOnLane(lane: .left, y: 1))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .center, y: -1), b: self.coordinates.pointOnLane(lane: .center, y: 1))
+        self.drawDebugLine(a: self.coordinates.pointOnLane(lane: .right, y: -1), b: self.coordinates.pointOnLane(lane: .right, y: 1))
         //
         
         self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
         self.rowIndex = 0
         
+        // @TODO: Delay before spawning first wave.
         let key = "spawnLoop"
         run(SKAction.repeatForever(
             SKAction.sequence([
                 SKAction.wait(forDuration: self.spawnRate),
                 SKAction.run({
-                    if self.pickupCount <= 0 {
+                    if self.pickupCount <= 0 { // done
                         self.removeAction(forKey: key)
+                        self.run(SKAction.sequence([
+                            SKAction.wait(forDuration: 3),
+                            SKAction.run{ self.roundOver() }]))
                     } else {
                         // temp
                         self.spawnRow(row: self.rows[self.rowIndex])
@@ -124,8 +137,21 @@ class GameScene: SKScene {
             withKey: key)
     }
     
+    private func roundOver() {
+        print("DONE") // @TODO: actually do something when game is over
+    }
+    
     func handleCollect(data: Pickup) {
-        //print("COLLECTED:", data.type, self.count)
+        switch data.type {
+        case .good:
+            self.collected += 1
+        case .bad:
+            self.collected = Int(round(Double(self.collected) * 0.85)) // @FIXME: gross
+        case .none:
+            break // shouldn't happen
+        }
+        
+        self.updateScoreText()
     }
     
     private func spawnRow(row: Row) {
@@ -134,17 +160,16 @@ class GameScene: SKScene {
             if type == .none { continue }
             
             let node = getNode(fromType: type)
-            //print("spawning:", pickup.lane, pickup.type)
             addChild(node)
             
             let pickupNode = PickupNode(
                 data: pickup,
                 node: node,
-                travelTime: 1,    // @HARDCODED
+                travelTime: 1.75,    // @HARDCODED
                 positioner: self.positioner,
                 coordinates: self.coordinates,
                 resolver: self.resolver)
-            pickupNode.collectEvent.addHandler(target: self, handler: GameScene.handleCollect) // @FIXME: figure out how to handle return value
+            let _ = pickupNode.collectEvent.addHandler(target: self, handler: GameScene.handleCollect) // @FIXME: figure out how to handle return value
             pickupNode.activate()
             
             if type == .good {
@@ -182,14 +207,10 @@ class GameScene: SKScene {
         switch position.state {
         case .inLane(let lane):
             positionMarker.alpha = 1.0
-            positionMarker.position = self.coordinates.laneToPosition(lane)
+            positionMarker.position = self.coordinates.laneToPoint(lane)
         case .outOfPosition:
             positionMarker.alpha = 0.0
         }
-    }
-    
-    func updateUI() {
-        self.label.text = String(format: "%d", self.collected)
     }
 }
 
@@ -217,6 +238,13 @@ extension GameScene {
         let x = point.x // ignore y, only care about x
         if x < frame.midX   { return .left }
         else                { return .right }
+    }
+}
+
+// MARK: - UI
+extension GameScene {
+    private func updateScoreText() {
+        self.scoreText.text = String(format: "%d", self.collected)
     }
 }
 

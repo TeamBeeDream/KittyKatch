@@ -9,55 +9,62 @@
 import Foundation
 import SpriteKit
 
+// MARK: - State
 class Coordinates {
     private let frame: CGRect
-    private let playerVerticalOffset: CGFloat
-    private let laneOffset: CGFloat
+    private let laneOffsetX: CGFloat
+    private let laneOffsetY: CGFloat
     
-    init(frame: CGRect, laneOffset: CGFloat, playerVerticalOffset: CGFloat) {
+    init(frame: CGRect, laneOffsetX: CGFloat, laneOffsetY: CGFloat) {
         assert(!frame.isEmpty)
-        //assert(laneOffset > 0 && laneOffset <= 1)
-        //assert(playerVerticalOffset > 0 && playerVerticalOffset <= 1)
+        assert(laneOffsetX > -1 && laneOffsetX <= 1)
+        assert(laneOffsetY > -1 && laneOffsetY <= 1)
         
         self.frame = frame
-        self.laneOffset = laneOffset
-        self.playerVerticalOffset = playerVerticalOffset
+        self.laneOffsetX = laneOffsetX
+        self.laneOffsetY = laneOffsetY
     }
-    
-    func laneToPosition(_ lane: Lane) -> CGPoint {
+}
+
+// MARK: - Public Methods
+extension Coordinates {
+    func laneToPoint(_ lane: Lane) -> CGPoint {
         let laneValue = CGFloat(lane.rawValue)
         
-        let laneOffsetScreen = ((self.laneOffset / 2) * self.frame.width)
+        //let laneOffsetScreen = ((self.laneOffsetX / 2) * self.frame.width)
         
-        let x = frame.midX + (laneOffsetScreen * laneValue)
-        let y = frame.midY + (self.playerVerticalOffset * self.frame.height / 2)
+        //let x = frame.midX + (laneOffsetScreen * laneValue)
+        //let y = self.convertY(self.laneOffsetY)
+        let x = self.convertX(self.laneOffsetX * laneValue)
+        let y = self.convertY(self.laneOffsetY)
         
         return CGPoint(x: x, y: y)
     }
     
-    func lanePoint(lane: Lane, y: CGFloat) -> CGPoint {
-        let y = frame.midY - (y / 2 * self.frame.height)
-        return CGPoint(x: laneToPosition(lane).x, y: y)
+    func pointOnLane(lane: Lane, y: CGFloat) -> CGPoint {
+        let newY = self.convertY(y)
+        let newX = self.laneToPoint(lane).x
+        return CGPoint(x: newX, y: newY)
     }
     
-    func relativePointToScreenPoint(_ point: CGPoint) -> CGPoint {
-        let x = frame.midX + (point.x * frame.width)
-        let y = frame.midY - (point.y * frame.height)
-        return CGPoint(x: x, y: y)
-    }
-    
-    func getScreenHeight() -> CGFloat {
-        return self.frame.height
-    }
-    
-    func getScreenWidth() -> CGFloat {
-        return self.frame.width
+    func getSize() -> CGSize {
+        return self.frame.size
     }
     
     func positionToPoint(_ position: Position) -> CGPoint {
-        let y = frame.midY + (self.playerVerticalOffset * self.frame.height / 2)
-        let laneOffsetScreen = ((self.laneOffset / 2) * self.frame.width)
-        let x = frame.midX + (laneOffsetScreen * position.offset)
+        let x = self.convertX(self.laneOffsetX * position.offset)
+        let y = self.convertY(self.laneOffsetY)
         return CGPoint(x: x, y: y)
+    }
+}
+
+// MARK: - Math Helpers
+extension Coordinates {
+    private func convertX(_ x: CGFloat) -> CGFloat {
+        return frame.midX + (x / 2 * frame.width)
+    }
+    
+    private func convertY(_ y: CGFloat) -> CGFloat {
+        return frame.midY - (y / 2 * frame.height)
     }
 }

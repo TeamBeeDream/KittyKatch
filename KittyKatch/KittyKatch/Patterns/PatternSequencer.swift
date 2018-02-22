@@ -15,9 +15,13 @@ protocol PatternSequencer {
 class DefaultPatternSequencer {
     private var patterns: [Difficulty: [Pattern]]!
     private var maxPickupsPerPattern: Int = 0
+    private let padding: Int
     
-    init(filePath: String) {
+    init(filePath: String, padding: Int) {
         assert(!filePath.isEmpty)
+        assert(padding >= 0)
+        
+        self.padding = padding
         
         // @NOTE: self.patterns is a dictionary
         //        where every key needs to be initialized
@@ -44,6 +48,9 @@ extension DefaultPatternSequencer: PatternSequencer {
             let pattern = self.findPattern(difficulty: difficulty, maxPickupCount: pickupCount)
             remainingPickups -= pattern.pickupCount
             sequence.append(contentsOf: pattern.rows)
+            
+            // padding
+            sequence.append(contentsOf: self.getPaddingRows(count: self.padding))
         }
         
         return sequence
@@ -177,5 +184,19 @@ extension DefaultPatternSequencer {
             if p.type == type { count += 1}
         }
         return count
+    }
+    
+    private func getPaddingRows(count: Int) -> [Row] {
+        var rows = [Row]()
+        for _ in 1...count {
+            let l = Pickup(type: .none, lane: .left)
+            let c = Pickup(type: .none, lane: .center)
+            let r = Pickup(type: .none, lane: .right)
+            let pickups: [Pickup] = [l, c, r]
+            
+            rows.append(Row(pickups: pickups))
+        }
+        
+        return rows
     }
 }

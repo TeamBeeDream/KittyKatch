@@ -8,11 +8,14 @@
 
 import Foundation
 
+// MARK: - State
 public class Event<DataType> {
     public typealias EventHandler = (DataType) -> ()
-    
-    public var eventHandlers = [Invocable]()
-    
+    private var eventHandlers = [Invocable]()
+}
+
+// MARK: - Public methods
+extension Event {
     public func addHandler<U: AnyObject>(target: U, handler: @escaping (U) -> EventHandler) -> Disposable {
         let wrapper = EventHandlerWrapper(target: target, handler: handler, event: self)
         eventHandlers.append(wrapper)
@@ -26,29 +29,32 @@ public class Event<DataType> {
     }
 }
 
-public class EventHandlerWrapper<T: AnyObject, U>: Invocable, Disposable {
-    weak var target: T?
-    let handler: (T) -> (U) -> ()
-    let event: Event<U>
-    
-    init(target: T?, handler: @escaping (T) -> (U) -> (), event: Event<U>) {
-        self.target = target
-        self.handler = handler
-        self.event = event
-    }
-    
-    public func invoke(data: Any) {
-        if let t = self.target {
-            handler(t)(data as! U)
+// MARK: - Private types
+extension Event {
+    private class EventHandlerWrapper<T: AnyObject, U>: Invocable, Disposable {
+        weak var target: T?
+        let handler: (T) -> (U) -> ()
+        let event: Event<U>
+        
+        init(target: T?, handler: @escaping (T) -> (U) -> (), event: Event<U>) {
+            self.target = target
+            self.handler = handler
+            self.event = event
         }
-    }
-    
-    public func dispose() {
-        event.eventHandlers = event.eventHandlers.filter { $0 !== self }
+        
+        public func invoke(data: Any) {
+            if let t = self.target {
+                self.handler(t)(data as! U)
+            }
+        }
+        
+        public func dispose() {
+            self.event.eventHandlers = event.eventHandlers.filter { $0 !== self }
+        }
     }
 }
 
-public protocol Invocable: class {
+private protocol Invocable: class {
     func invoke(data: Any)
 }
 
