@@ -49,9 +49,11 @@ class PickupNode {
 extension PickupNode {
     private func getMoveAction(destination: CGPoint, duration: CGFloat) -> SKAction {
         let time = TimeInterval(duration)
-        return SKAction.sequence([
+        let motion = SKAction.group([
             SKAction.move(to: destination, duration: time),
-            SKAction.removeFromParent()])
+            SKAction.rotate(byAngle: 2, duration: time)])
+        
+        return SKAction.sequence([motion, SKAction.removeFromParent()])
     }
     
     private func getCollisionAction(dt: CGFloat) -> SKAction {
@@ -71,7 +73,7 @@ extension PickupNode {
     private func getCollectAndDeleteSequence() -> SKAction {
         let move = SKAction.move(to: self.coordinates.laneToPosition(self.data.lane), duration: 0.1)
         let fadeOut = SKAction.fadeOut(withDuration: TimeInterval(0.2))
-        let shrink = SKAction.scale(by: -1, duration: TimeInterval(0.2))
+        let shrink = SKAction.scale(to: 0, duration: TimeInterval(0.2))
         
         return SKAction.sequence([
             SKAction.group([move, fadeOut, shrink]),

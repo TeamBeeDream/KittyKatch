@@ -35,8 +35,8 @@ class GameScene: SKScene {
     private var debugPositionMarker: SKShapeNode!
     
     // PICKUPS
-    private var pickup : SKShapeNode!
-    private var badObj : SKShapeNode!
+    private var pickup : SKNode!
+    private var badObj : SKNode!
     
     // TIMING
     private var previousTime: TimeInterval = 0
@@ -89,9 +89,10 @@ class GameScene: SKScene {
         addChild(kitty)
         self.kitty = kitty
         
-        let pickup = SKShapeNode(circleOfRadius: 20)
-        pickup.strokeColor = SKColor.clear
-        pickup.fillColor = SKColor.green
+        // fish
+        let pickupWidth = self.coordinates.getScreenWidth() * 0.175
+        let pickup = SKSpriteNode(imageNamed: "Fish")
+        pickup.size = CGSize(width: pickupWidth, height: pickupWidth)
         self.pickup = pickup
         
         let badObj = SKShapeNode(circleOfRadius: 20)
@@ -116,6 +117,7 @@ class GameScene: SKScene {
         self.rows = self.sequencer.getSequence(difficulty: .medium, pickupCount: 100)
         self.rowIndex = 0
         
+        // @TODO: Delay before spawning first wave.
         let key = "spawnLoop"
         run(SKAction.repeatForever(
             SKAction.sequence([
@@ -158,13 +160,12 @@ class GameScene: SKScene {
             if type == .none { continue }
             
             let node = getNode(fromType: type)
-            //print("spawning:", pickup.lane, pickup.type)
             addChild(node)
             
             let pickupNode = PickupNode(
                 data: pickup,
                 node: node,
-                travelTime: 1,    // @HARDCODED
+                travelTime: 1.75,    // @HARDCODED
                 positioner: self.positioner,
                 coordinates: self.coordinates,
                 resolver: self.resolver)
